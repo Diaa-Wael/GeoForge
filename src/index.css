@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "./components/mapUi.css";
+
+/* Without these, height: 100vh on the map div can still get pushed around by
+   default body margin/scrollbars, and percentage-height children have nothing
+   to size against. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow: hidden;
+}
