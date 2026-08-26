@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
-import { panel, groupLabel, divider, iconBtn, labelBtn, readout, input, searchTrigger, resultRow } from './mapUiTheme';
+import {
+  panel,
+  groupLabel,
+  divider,
+  iconBtn,
+  labelBtn,
+  readout,
+  input,
+  searchTrigger,
+  resultRow,
+  getGisUiThemeStyle,
+} from './mapUiTheme';
 
 export interface BasemapOption {
   id: string;
@@ -12,9 +23,75 @@ export interface BasemapOption {
 const ESRI_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, and the GIS User Community';
 
 export const BASEMAP_OPTIONS: BasemapOption[] = [
-  { id: 'dark', label: 'Dark', style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' },
-  { id: 'light', label: 'Light', style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' },
-  { id: 'streets', label: 'Streets', style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' },
+  {
+    id: 'dark',
+    label: 'Dark',
+    style: {
+      version: 8,
+      sources: {
+        'esri-dark-base': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 16,
+          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+        },
+        'esri-dark-reference': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 16,
+        },
+      },
+      layers: [
+        { id: 'esri-dark-base-layer', type: 'raster', source: 'esri-dark-base' },
+        { id: 'esri-dark-reference-layer', type: 'raster', source: 'esri-dark-reference' },
+      ],
+    },
+  },
+  {
+    id: 'light',
+    label: 'Light',
+    style: {
+      version: 8,
+      sources: {
+        'esri-light-base': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 16,
+          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+        },
+        'esri-light-reference': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 16,
+        },
+      },
+      layers: [
+        { id: 'esri-light-base-layer', type: 'raster', source: 'esri-light-base' },
+        { id: 'esri-light-reference-layer', type: 'raster', source: 'esri-light-reference' },
+      ],
+    },
+  },
+  {
+    id: 'streets',
+    label: 'Streets',
+    style: {
+      version: 8,
+      sources: {
+        'esri-streets': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 16,
+          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, USGS',
+        },
+      },
+      layers: [{ id: 'esri-streets-layer', type: 'raster', source: 'esri-streets' }],
+    },
+  },
   {
     id: 'satellite',
     label: 'Satellite',
@@ -26,7 +103,7 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           // Note: Esri's REST tile scheme is {z}/{y}/{x} — not the usual {z}/{x}/{y}.
           tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 19,
+          maxzoom: 16,
           attribution: ESRI_ATTRIBUTION,
         },
       },
@@ -43,7 +120,7 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           type: 'raster',
           tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 19,
+          maxzoom: 16,
           attribution: ESRI_ATTRIBUTION,
         },
         'esri-labels': {
@@ -52,7 +129,7 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
             'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
           ],
           tileSize: 256,
-          maxzoom: 19,
+          maxzoom: 16,
         },
       },
       layers: [
@@ -67,19 +144,15 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
     style: {
       version: 8,
       sources: {
-        'opentopomap': {
+        'esri-topo': {
           type: 'raster',
-          tiles: [
-            'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
-            'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
-            'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
-          ],
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 17,
-          attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)',
+          maxzoom: 16,
+          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS',
         },
       },
-      layers: [{ id: 'opentopomap-layer', type: 'raster', source: 'opentopomap' }],
+      layers: [{ id: 'esri-topo-layer', type: 'raster', source: 'esri-topo' }],
     },
   },
 ];
@@ -116,6 +189,8 @@ export const MapControls: React.FC<MapControlsProps> = ({
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [isBasemapOpen, setIsBasemapOpen] = useState(true);
+  const mapUiThemeStyle = getGisUiThemeStyle(activeBasemapId);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -193,7 +268,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
   return createPortal(
     <>
       {/* Right side: navigation cluster */}
-      <div className={`${panel} top-4 right-4 p-2 w-[168px]`}>
+      <div className={`${panel} top-4 right-4 p-2`} style={{ ...mapUiThemeStyle, width: 'min(11rem, calc(100vw - 2rem))' }}>
         <div className={groupLabel}>Navigate</div>
 
         <div className="flex gap-1">
@@ -294,20 +369,49 @@ export const MapControls: React.FC<MapControlsProps> = ({
       </div>
 
       {/* Left side: basemap, search, position */}
-      <div className={`${panel} top-4 left-4 p-2 w-64`}>
-        <div className={groupLabel}>Basemap</div>
-        <div className="grid grid-cols-3 gap-1 mb-1">
-          {BASEMAP_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => onBasemapChange(option)}
-              className={`${labelBtn(activeBasemapId === option.id)} text-center`}
-            >
-              {option.label}
-            </button>
-          ))}
+      <div
+        className={`${panel} top-4 left-4 p-2 transition-all duration-200`}
+        style={{
+          ...mapUiThemeStyle,
+          width: isBasemapOpen ? 'min(18rem, calc(100vw - 2rem))' : 'min(12rem, calc(100vw - 2rem))',
+        }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className={groupLabel}>Basemap</div>
+          <button
+            type="button"
+            onClick={() => setIsBasemapOpen((prev) => !prev)}
+            className="gis-btn gis-icon-btn"
+            aria-label={isBasemapOpen ? 'Collapse basemap list' : 'Expand basemap list'}
+            title={isBasemapOpen ? 'Collapse basemap list' : 'Expand basemap list'}
+            style={{ width: '24px', height: '24px', fontSize: '12px' }}
+          >
+            {isBasemapOpen ? '−' : '+'}
+          </button>
         </div>
+
+        {isBasemapOpen && (
+          <div className="mb-1 flex flex-col gap-1.5">
+            {BASEMAP_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onBasemapChange(option)}
+                className={`${labelBtn(activeBasemapId === option.id)} justify-between text-left`}
+                style={{ width: '100%' }}
+              >
+                <span>{option.label}</span>
+                <span className="text-[10px] opacity-75">{activeBasemapId === option.id ? 'Current' : 'Select'}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!isBasemapOpen && (
+          <div className="mb-1 text-[10px] text-[var(--gis-text-faint)] uppercase tracking-[0.12em]">
+            {BASEMAP_OPTIONS.find((option) => option.id === activeBasemapId)?.label ?? 'Basemap'}
+          </div>
+        )}
 
         <div className={divider} />
 

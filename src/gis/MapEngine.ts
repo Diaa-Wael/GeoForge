@@ -6,11 +6,17 @@ export class MapEngine {
   private map: Map;
 
   constructor(containerId: string, center: [number, number], zoom: number, style?: string | StyleSpecification) {
+    if (typeof maplibregl.setRTLTextPlugin === 'function') {
+      maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js', true);
+    }
+
     this.map = new maplibregl.Map({
       container: containerId,
       style: style ?? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: center,
       zoom: zoom,
+      maxZoom: 16,
+      renderWorldCopies: false,
       // This is a flat 2D map — lock out any rotation/pitch interaction so
       // right-click-drag or two-finger-drag can't tilt/rotate the camera.
       dragRotate: false,
@@ -21,6 +27,8 @@ export class MapEngine {
       canvasContextAttributes: { preserveDrawingBuffer: true },
     });
 
+    this.map.setRenderWorldCopies(false);
+    this.map.setMaxZoom(16);
     this.map.touchZoomRotate.disableRotation();
     this.map.keyboard.disableRotation();
   }

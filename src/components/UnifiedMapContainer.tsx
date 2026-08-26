@@ -12,7 +12,7 @@ import { BufferTool, BufferResult } from './BufferTool';
 import { PrintReport } from './PrintReport';
 
 const DEFAULT_ZOOM = 11;
-const DEFAULT_BASEMAP_ID = 'dark';
+const DEFAULT_BASEMAP_ID = 'light';
 const DEFAULT_BUFFER_RADIUS = 250;
 const RESIDENTS_COUNT = 45;
 const RESIDENTS_RADIUS_KM = 3;
@@ -295,6 +295,7 @@ export const UnifiedMapContainer: React.FC = () => {
         radius={bufferRadius}
         result={bufferResult}
         coverage={coverage}
+        activeBasemapId={activeBasemapId}
         onToggleActive={handleToggleBufferActive}
         onRadiusChange={setBufferRadius}
         onExportGeoJSON={handleExportGeoJSON}
