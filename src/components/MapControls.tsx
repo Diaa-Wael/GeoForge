@@ -1,18 +1,87 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { Map as MapLibreMap } from 'maplibre-gl';
+import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import { panel, groupLabel, divider, iconBtn, labelBtn, readout, input, searchTrigger, resultRow } from './mapUiTheme';
 
 export interface BasemapOption {
   id: string;
   label: string;
-  styleUrl: string;
+  style: string | StyleSpecification;
 }
 
+const ESRI_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, and the GIS User Community';
+
 export const BASEMAP_OPTIONS: BasemapOption[] = [
-  { id: 'dark', label: 'Dark', styleUrl: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' },
-  { id: 'light', label: 'Light', styleUrl: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' },
-  { id: 'streets', label: 'Streets', styleUrl: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' },
+  { id: 'dark', label: 'Dark', style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' },
+  { id: 'light', label: 'Light', style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' },
+  { id: 'streets', label: 'Streets', style: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' },
+  {
+    id: 'satellite',
+    label: 'Satellite',
+    style: {
+      version: 8,
+      sources: {
+        'esri-imagery': {
+          type: 'raster',
+          // Note: Esri's REST tile scheme is {z}/{y}/{x} — not the usual {z}/{x}/{y}.
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution: ESRI_ATTRIBUTION,
+        },
+      },
+      layers: [{ id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery' }],
+    },
+  },
+  {
+    id: 'hybrid',
+    label: 'Hybrid',
+    style: {
+      version: 8,
+      sources: {
+        'esri-imagery': {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution: ESRI_ATTRIBUTION,
+        },
+        'esri-labels': {
+          type: 'raster',
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery' },
+        { id: 'esri-labels-layer', type: 'raster', source: 'esri-labels' },
+      ],
+    },
+  },
+  {
+    id: 'topo',
+    label: 'Topo',
+    style: {
+      version: 8,
+      sources: {
+        'opentopomap': {
+          type: 'raster',
+          tiles: [
+            'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
+            'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
+            'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
+          ],
+          tileSize: 256,
+          maxzoom: 17,
+          attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap (CC-BY-SA)',
+        },
+      },
+      layers: [{ id: 'opentopomap-layer', type: 'raster', source: 'opentopomap' }],
+    },
+  },
 ];
 
 interface GeocodeResult {
@@ -227,13 +296,13 @@ export const MapControls: React.FC<MapControlsProps> = ({
       {/* Left side: basemap, search, position */}
       <div className={`${panel} top-4 left-4 p-2 w-64`}>
         <div className={groupLabel}>Basemap</div>
-        <div className="flex gap-1 mb-1">
+        <div className="grid grid-cols-3 gap-1 mb-1">
           {BASEMAP_OPTIONS.map((option) => (
             <button
               key={option.id}
               type="button"
               onClick={() => onBasemapChange(option)}
-              className={`${labelBtn(activeBasemapId === option.id)} flex-1 text-center`}
+              className={`${labelBtn(activeBasemapId === option.id)} text-center`}
             >
               {option.label}
             </button>

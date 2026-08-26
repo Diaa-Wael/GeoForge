@@ -1,14 +1,14 @@
-import maplibregl, { Map, MapMouseEvent } from 'maplibre-gl';
+import maplibregl, { Map, MapMouseEvent, StyleSpecification } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import type { ParcelFeatureCollection } from '../types/gis';
 
 export class MapEngine {
   private map: Map;
 
-  constructor(containerId: string, center: [number, number], zoom: number) {
+  constructor(containerId: string, center: [number, number], zoom: number, style?: string | StyleSpecification) {
     this.map = new maplibregl.Map({
       container: containerId,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      style: style ?? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: center,
       zoom: zoom,
       // This is a flat 2D map — lock out any rotation/pitch interaction so
@@ -16,6 +16,9 @@ export class MapEngine {
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
+      // Needed so getCanvas().toDataURL() can capture the current view for
+      // the PDF export report — small perf cost, acceptable for this scale.
+      canvasContextAttributes: { preserveDrawingBuffer: true },
     });
 
     this.map.touchZoomRotate.disableRotation();
@@ -27,6 +30,8 @@ export class MapEngine {
   }
 
   public initVectorLayers(parcels: ParcelFeatureCollection): void {
+    if (this.map.getSource('parcels-source')) return;
+
     this.map.addSource('parcels-source', {
       type: 'geojson',
       data: parcels,
@@ -85,6 +90,10 @@ export class MapEngine {
     this.map.on('click', (e: MapMouseEvent) => {
       handler(e.lngLat.lng, e.lngLat.lat);
     });
+  }
+
+  public getCanvasDataUrl(): string {
+    return this.map.getCanvas().toDataURL('image/png');
   }
 
   public getMapInstance(): Map {

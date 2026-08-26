@@ -176,3 +176,19 @@
   background: var(--gis-hover-bg);
   color: var(--gis-text);
 }
+
+/* Print export: hide the live map/UI, show only the report. */
+@media print {
+  body > *:not(#print-report-root) {
+    display: none !important;
+  }
+  #print-report-root {
+    display: block !important;
+  }
+}
+
+@media screen {
+  #print-report-root {
+    display: none;
+  }
+}
