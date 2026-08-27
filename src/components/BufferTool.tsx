@@ -33,12 +33,12 @@ export const BufferTool: React.FC<BufferToolProps> = ({
   onExportGeoJSON,
   onExportPdf,
 }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = React.useState(() => typeof window === 'undefined' || window.innerWidth > 640);
   const mapUiThemeStyle = getGisUiThemeStyle(activeBasemapId);
 
   return createPortal(
     <div
-      className={`${panel} gis-service-panel ${isOpen ? '' : 'collapsed'} bottom-4 left-4`}
+      className={`${panel} gis-service-panel gis-mobile-service-panel ${isOpen ? '' : 'collapsed'} ${result ? 'has-result' : ''} bottom-4 left-4`}
       style={{
         ...mapUiThemeStyle,
         width: isOpen ? 'min(18rem, calc(100vw - 2rem))' : 'min(13.5rem, calc(100vw - 2rem))',
@@ -63,7 +63,7 @@ export const BufferTool: React.FC<BufferToolProps> = ({
           <button
             type="button"
             onClick={() => setIsOpen((prev) => !prev)}
-            className="gis-btn gis-icon-btn"
+            className="gis-btn gis-icon-btn gis-collapse-btn"
             aria-label={isOpen ? 'Collapse service analysis' : 'Expand service analysis'}
             title={isOpen ? 'Collapse service analysis' : 'Expand service analysis'}
             style={{ width: '24px', height: '24px', fontSize: '12px' }}
@@ -91,7 +91,7 @@ export const BufferTool: React.FC<BufferToolProps> = ({
             <>
               <div className={divider} />
 
-              <div className="flex flex-col gap-1">
+              <div className="gis-radius-control flex flex-col gap-1">
                 <div className="flex items-center justify-between text-[10px] px-1 text-[var(--gis-text-faint)]">
                   <span className="uppercase tracking-[0.1em]">Service radius</span>
                   <span className="font-mono tabular-nums text-[var(--gis-text)]">{radius} m</span>
@@ -125,7 +125,7 @@ export const BufferTool: React.FC<BufferToolProps> = ({
                     />
                   </div>
 
-                  <div className={readout}>
+                  <div className={`${readout} gis-coverage-detail`}>
                     {coverage.coveredPopulation.toLocaleString()} of {coverage.totalPopulation.toLocaleString()} simulated
                     residents covered
                     <br />
@@ -135,7 +135,7 @@ export const BufferTool: React.FC<BufferToolProps> = ({
                     </span>
                   </div>
 
-                  <p className="text-[9px] leading-snug px-0.5" style={{ color: 'var(--gis-text-faint)' }}>
+                  <p className="gis-analysis-note text-[9px] leading-snug px-0.5" style={{ color: 'var(--gis-text-faint)' }}>
                     Resident points are randomly simulated for demonstration — not real demographic data.
                   </p>
                 </div>

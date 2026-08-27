@@ -89,8 +89,15 @@ export const UnifiedMapContainer: React.FC = () => {
   const [coverage, setCoverage] = useState<CoverageStats | null>(null);
   const [snapshotDataUrl, setSnapshotDataUrl] = useState<string | null>(null);
 
+  const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+
   const bufferActiveRef = useRef(bufferActive);
   const bufferRadiusRef = useRef(bufferRadius);
+
+  useEffect(() => {
+    document.body.classList.toggle('android-map-ui', isAndroid);
+    return () => document.body.classList.remove('android-map-ui');
+  }, [isAndroid]);
 
   useEffect(() => {
     bufferActiveRef.current = bufferActive;
@@ -169,33 +176,35 @@ export const UnifiedMapContainer: React.FC = () => {
     map.on('zoomend', handleMoveEnd);
     map.getContainer().addEventListener('mouseleave', handleMouseLeave);
 
+    const handleMapClick = (lng: number, lat: number) => {
+      if (!bufferActiveRef.current || !residentsRef.current) return;
+
+      const radius = bufferRadiusRef.current;
+      const bufferCalc = SpatialProcessor.calculateGeodesicBuffer(lng, lat, radius);
+      engine.updateBufferLayer(bufferCalc.geometry);
+
+      const bufferPolygon = bufferCalc.geometry.features[0];
+      if (bufferPolygon) {
+        const { scored, stats } = scoreCoverage(residentsRef.current, bufferPolygon as any);
+        residentsRef.current = scored;
+        const source = map.getSource('residents-source') as GeoJSONSource | undefined;
+        source?.setData(scored as any);
+        setCoverage(stats);
+      }
+
+      setBufferResult({
+        longitude: lng,
+        latitude: lat,
+        radiusMeters: radius,
+        areaSqKm: bufferCalc.areaSqMeters / 1_000_000,
+      });
+    };
+
+    engine.onMapClick(handleMapClick);
+
     engine.onReady(() => {
       engine.initVectorLayers(buildMockParcels(center));
       if (residentsRef.current) addResidentsLayer(engine, residentsRef.current);
-
-      engine.onMapClick((lng, lat) => {
-        if (!bufferActiveRef.current || !residentsRef.current) return;
-
-        const radius = bufferRadiusRef.current;
-        const bufferCalc = SpatialProcessor.calculateGeodesicBuffer(lng, lat, radius);
-        engine.updateBufferLayer(bufferCalc.geometry);
-
-        const bufferPolygon = bufferCalc.geometry.features[0];
-        if (bufferPolygon) {
-          const { scored, stats } = scoreCoverage(residentsRef.current, bufferPolygon as any);
-          residentsRef.current = scored;
-          const source = map.getSource('residents-source') as GeoJSONSource | undefined;
-          source?.setData(scored as any);
-          setCoverage(stats);
-        }
-
-        setBufferResult({
-          longitude: lng,
-          latitude: lat,
-          radiusMeters: radius,
-          areaSqKm: bufferCalc.areaSqMeters / 1_000_000,
-        });
-      });
     });
 
     return () => {
@@ -271,7 +280,7 @@ export const UnifiedMapContainer: React.FC = () => {
 
   return (
     <>
-      <div id="map-container" ref={mapContainerRef} style={{ width: '100%', height: '100vh' }} />
+      <div id="map-container" ref={mapContainerRef} className="map-container" />
 
       {locationBadge && (
         <div

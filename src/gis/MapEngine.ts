@@ -4,6 +4,7 @@ import type { ParcelFeatureCollection } from '../types/gis';
 
 export class MapEngine {
   private map: Map;
+  private pendingBufferData: FeatureCollection | null = null;
 
   constructor(containerId: string, center: [number, number], zoom: number, style?: string | StyleSpecification) {
     if (typeof maplibregl.setRTLTextPlugin === 'function') {
@@ -79,13 +80,21 @@ export class MapEngine {
         'fill-opacity': 0.4,
       },
     });
+
+    if (this.pendingBufferData) {
+      (this.map.getSource('buffer-source') as maplibregl.GeoJSONSource).setData(this.pendingBufferData);
+      this.pendingBufferData = null;
+    }
   }
 
   public updateBufferLayer(bufferData: FeatureCollection): void {
     const source = this.map.getSource('buffer-source') as maplibregl.GeoJSONSource;
     if (source) {
       source.setData(bufferData);
+      return;
     }
+
+    this.pendingBufferData = bufferData;
   }
 
   public toggleLayerVisibility(layerId: string, visible: boolean): void {

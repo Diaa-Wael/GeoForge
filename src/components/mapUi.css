@@ -32,6 +32,12 @@
   transition: width 220ms ease, transform 220ms ease, box-shadow 220ms ease;
 }
 
+.gis-nav-panel,
+.gis-basemap-panel,
+.gis-service-panel {
+  contain: layout paint;
+}
+
 .gis-panel::before {
   content: '';
   position: absolute;
@@ -53,15 +59,61 @@
 
 @media (max-width: 640px) {
   .gis-panel {
-    max-width: calc(100vw - 0.75rem);
+    max-width: calc(100vw - 1rem);
+  }
+
+  .gis-nav-panel {
+    top: max(0.5rem, env(safe-area-inset-top)) !important;
+    right: 0.5rem !important;
+    width: min(7.5rem, calc(100vw - 1rem)) !important;
+    padding: 0.3rem !important;
+  }
+
+  .gis-nav-panel .gis-group-label {
+    margin-bottom: 0.25rem;
+  }
+
+  .gis-nav-panel > div {
+    min-width: 0;
+  }
+
+  .gis-nav-panel .gis-btn {
+    min-width: 0;
+    min-height: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+  }
+
+  .gis-nav-panel .gis-icon-btn {
+    width: 1.75rem;
+    min-width: 1.75rem;
+  }
+
+  .gis-basemap-panel {
+    top: max(0.5rem, env(safe-area-inset-top)) !important;
+    left: 0.5rem !important;
+    width: min(8.75rem, calc(100vw - 8.5rem)) !important;
+    padding: 0.3rem !important;
+  }
+
+  .gis-basemap-panel .gis-label-btn {
+    min-height: 1.75rem;
+    line-height: 1.1;
+  }
+
+  .gis-basemap-panel .gis-label-btn span:last-child {
+    display: none;
   }
 
   .gis-service-panel {
-    width: min(12.5rem, calc(100vw - 0.75rem));
+    left: 0.5rem !important;
+    bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+    width: min(9.5rem, calc(100vw - 1rem)) !important;
+    padding: 0.4rem !important;
   }
 
   .gis-service-panel.collapsed {
-    width: min(10.5rem, calc(100vw - 0.75rem));
+    width: min(7.5rem, calc(100vw - 1rem)) !important;
   }
 
   .gis-service-header {
@@ -70,7 +122,126 @@
   }
 
   .gis-service-button {
+    font-size: 9px;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .gis-btn {
+    min-height: 2.25rem;
+  }
+
+  .gis-icon-btn {
+    min-width: 2.25rem;
+  }
+
+  .gis-basemap-panel .gis-icon-btn,
+  .gis-service-panel .gis-icon-btn {
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+  }
+
+  .gis-input {
+    min-height: 2.25rem;
+    font-size: 16px;
+  }
+
+  .gis-group-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .gis-label-btn {
+    padding: 0.4rem 0.45rem;
     font-size: 10px;
+  }
+
+  .gis-service-panel .gis-group-label {
+    padding-bottom: 0.15rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .gis-nav-panel {
+    top: max(0.5rem, env(safe-area-inset-top)) !important;
+    left: auto !important;
+    right: 0.5rem !important;
+    width: min(7.5rem, calc(100vw - 1rem)) !important;
+    padding: 0.25rem !important;
+  }
+
+  .gis-nav-panel > div:not(.gis-group-label) {
+    max-width: none;
+    margin-inline: auto;
+  }
+
+  .gis-basemap-panel {
+    left: 0.5rem !important;
+    right: auto !important;
+    width: min(8.75rem, calc(100vw - 1rem)) !important;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 900px) {
+  .android-map-ui .gis-panel {
+    font-size: 9px;
+  }
+
+  .android-map-ui .gis-nav-panel {
+    width: min(6.75rem, calc(100vw - 1rem)) !important;
+    padding: 0.2rem !important;
+  }
+
+  .android-map-ui .gis-nav-panel .gis-btn {
+    min-height: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .android-map-ui .gis-nav-panel .gis-icon-btn {
+    width: 1.5rem;
+    min-width: 1.5rem;
+  }
+
+  .android-map-ui .gis-basemap-panel {
+    width: min(7.75rem, calc(100vw - 8rem)) !important;
+    padding: 0.2rem !important;
+  }
+
+  .android-map-ui .gis-basemap-panel .gis-label-btn {
+    min-height: 1.5rem;
+    padding: 0.25rem 0.35rem;
+    font-size: 9px;
+  }
+
+  .android-map-ui .gis-service-panel {
+    width: min(8.25rem, calc(100vw - 1rem)) !important;
+    padding: 0.3rem !important;
+  }
+
+  .android-map-ui .gis-service-panel.collapsed {
+    width: min(6.75rem, calc(100vw - 1rem)) !important;
+  }
+
+  .android-map-ui .gis-service-button {
+    padding: 0.3rem 0.35rem;
+    font-size: 8px;
+  }
+
+  .android-map-ui .gis-service-header {
+    gap: 0.35rem;
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .android-map-ui .gis-service-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .android-map-ui .gis-service-badge {
+    padding: 0.15rem 0.3rem;
+    font-size: 7px;
   }
 }
 
@@ -227,6 +398,35 @@
   height: 2rem;
 }
 
+.gis-collapse-btn {
+  flex: 0 0 auto;
+  width: 1.75rem !important;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  margin: 0.1rem;
+  padding: 0 !important;
+  border: 1px solid var(--gis-accent-border);
+  border-radius: 0.45rem;
+  color: var(--gis-accent);
+  background: var(--gis-accent-soft);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.gis-basemap-panel > .flex:first-child,
+.gis-service-header {
+  padding-inline: 0.1rem;
+}
+
+.gis-collapse-btn:hover:not(:disabled) {
+  color: var(--gis-text);
+  background: var(--gis-hover-bg);
+  border-color: var(--gis-accent);
+}
+
 .gis-label-btn {
   width: 100%;
   padding: 0.5rem 0.625rem;
@@ -329,4 +529,153 @@
   #print-report-root {
     display: none;
   }
+}
+
+/* Samsung Internet can expose desktop-sized viewports on foldables and large
+   phones. Use the device class rather than viewport width for their compact UI. */
+body.android-map-ui .gis-panel {
+  font-size: 9px;
+}
+
+body.android-map-ui .gis-nav-panel {
+  width: 6.75rem !important;
+  padding: 0.2rem !important;
+}
+
+body.android-map-ui .gis-nav-panel .gis-btn {
+  min-width: 0;
+  min-height: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+}
+
+body.android-map-ui .gis-nav-panel .gis-icon-btn {
+  width: 1.5rem;
+  min-width: 1.5rem;
+}
+
+body.android-map-ui .gis-basemap-panel {
+  width: 7.75rem !important;
+  padding: 0.2rem !important;
+}
+
+body.android-map-ui .gis-basemap-panel .gis-label-btn {
+  min-height: 1.5rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 9px;
+}
+
+body.android-map-ui .gis-basemap-panel .gis-label-btn span:last-child {
+  display: none;
+}
+
+body.android-map-ui .gis-service-panel {
+  width: 8.25rem !important;
+  padding: 0.3rem !important;
+}
+
+body.android-map-ui .gis-service-panel.collapsed {
+  width: 6.75rem !important;
+}
+
+body.android-map-ui .gis-service-button {
+  padding: 0.3rem 0.35rem;
+  font-size: 8px;
+}
+
+body.android-map-ui .gis-service-header {
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+body.android-map-ui .gis-service-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+body.android-map-ui .gis-service-badge {
+  padding: 0.15rem 0.3rem;
+  font-size: 7px;
+}
+
+@media (max-width: 640px) {
+  .gis-mobile-service-panel {
+    left: 50% !important;
+    right: auto !important;
+    bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+    transform: translateX(-50%) !important;
+    width: min(15rem, calc(100vw - 1rem)) !important;
+    max-width: calc(100vw - 1rem);
+    padding: 0.45rem !important;
+    border-radius: 0.9rem;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .gis-mobile-service-panel.collapsed {
+    width: min(11rem, calc(100vw - 1rem)) !important;
+  }
+
+  .gis-mobile-service-panel .gis-service-header {
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .gis-mobile-service-panel .gis-service-header > div:first-child {
+    min-width: 0;
+  }
+
+  .gis-mobile-service-panel .gis-service-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.45rem;
+  }
+
+  .gis-mobile-service-panel .gis-group-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .gis-mobile-service-panel .gis-service-badge {
+    padding: 0.15rem 0.35rem;
+    font-size: 7px;
+    letter-spacing: 0.07em;
+  }
+
+  .gis-mobile-service-panel .gis-service-button {
+    min-height: 2.1rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 0.55rem;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .gis-mobile-service-panel .gis-divider {
+    margin: 0.2rem 0;
+  }
+
+    .gis-mobile-service-panel .gis-coverage-detail,
+    .gis-mobile-service-panel .gis-analysis-note {
+      display: none;
+    }
+
+
+    .gis-mobile-service-panel .gis-result-row {
+      padding: 0.25rem 0.35rem;
+    }
+
+    .gis-mobile-service-panel .gis-label-btn {
+      padding: 0.35rem 0.4rem;
+      font-size: 9px;
+    }
+  }
+
+body.android-map-ui .gis-mobile-service-panel {
+  width: 14rem !important;
+  padding: 0.35rem !important;
+}
+
+body.android-map-ui .gis-mobile-service-panel.collapsed {
+  width: 10rem !important;
 }

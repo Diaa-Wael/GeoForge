@@ -268,7 +268,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
   return createPortal(
     <>
       {/* Right side: navigation cluster */}
-      <div className={`${panel} top-4 right-4 p-2`} style={{ ...mapUiThemeStyle, width: 'min(11rem, calc(100vw - 2rem))' }}>
+      <div className={`${panel} gis-nav-panel top-4 right-4 p-2`} style={{ ...mapUiThemeStyle, width: 'min(11rem, calc(100vw - 2rem))' }}>
         <div className={groupLabel}>Navigate</div>
 
         <div className="flex gap-1">
@@ -370,7 +370,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
       {/* Left side: basemap, search, position */}
       <div
-        className={`${panel} top-4 left-4 p-2 transition-all duration-200`}
+        className={`${panel} gis-basemap-panel top-4 left-4 p-2 transition-all duration-200`}
         style={{
           ...mapUiThemeStyle,
           width: isBasemapOpen ? 'min(18rem, calc(100vw - 2rem))' : 'min(12rem, calc(100vw - 2rem))',
@@ -381,7 +381,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
           <button
             type="button"
             onClick={() => setIsBasemapOpen((prev) => !prev)}
-            className="gis-btn gis-icon-btn"
+            className="gis-btn gis-icon-btn gis-collapse-btn"
             aria-label={isBasemapOpen ? 'Collapse basemap list' : 'Expand basemap list'}
             title={isBasemapOpen ? 'Collapse basemap list' : 'Expand basemap list'}
             style={{ width: '24px', height: '24px', fontSize: '12px' }}
