@@ -5,19 +5,33 @@ import type { ParcelFeatureCollection } from '../types/gis';
 export class MapEngine {
   private map: Map;
   private pendingBufferData: FeatureCollection | null = null;
+  private pendingCursor: [number, number] | null = null;
+  private cursorFrame: number | null = null;
 
   constructor(containerId: string, center: [number, number], zoom: number, style?: string | StyleSpecification) {
     if (typeof maplibregl.setRTLTextPlugin === 'function') {
       maplibregl.setRTLTextPlugin('https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js', true);
     }
 
+    const isTouchDevice =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(pointer: coarse)').matches;
+
     this.map = new maplibregl.Map({
       container: containerId,
       style: style ?? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: center,
       zoom: zoom,
-      maxZoom: 16,
+      maxZoom: 14,
       renderWorldCopies: false,
+      refreshExpiredTiles: false,
+      // Keep more nearby tiles on desktop, but avoid excessive RAM use on
+      // phones and tablets while still retaining parent/adjacent zoom tiles.
+      maxTileCacheSize: isTouchDevice ? 256 : 768,
+      maxTileCacheZoomLevels: isTouchDevice ? 6 : 10,
+      fadeDuration: 0,
+      cancelPendingTileRequestsWhileZooming: true,
+      collectResourceTiming: false,
       // This is a flat 2D map — lock out any rotation/pitch interaction so
       // right-click-drag or two-finger-drag can't tilt/rotate the camera.
       dragRotate: false,
@@ -29,7 +43,7 @@ export class MapEngine {
     });
 
     this.map.setRenderWorldCopies(false);
-    this.map.setMaxZoom(16);
+    this.map.setMaxZoom(14);
     this.map.touchZoomRotate.disableRotation();
     this.map.keyboard.disableRotation();
   }
@@ -81,10 +95,46 @@ export class MapEngine {
       },
     });
 
+    this.map.addSource('cursor-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+
     if (this.pendingBufferData) {
       (this.map.getSource('buffer-source') as maplibregl.GeoJSONSource).setData(this.pendingBufferData);
       this.pendingBufferData = null;
     }
+  }
+
+  public updateCursorPosition(longitude: number, latitude: number): void {
+    this.pendingCursor = [longitude, latitude];
+    if (this.cursorFrame !== null) return;
+
+    this.cursorFrame = requestAnimationFrame(() => {
+      this.cursorFrame = null;
+      const coordinates = this.pendingCursor;
+      if (!coordinates) return;
+
+      const source = this.map.getSource('cursor-source') as maplibregl.GeoJSONSource | undefined;
+      source?.setData({
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          properties: {},
+          geometry: { type: 'Point', coordinates },
+        }],
+      });
+    });
+  }
+
+  public clearCursorPosition(): void {
+    this.pendingCursor = null;
+    if (this.cursorFrame !== null) {
+      cancelAnimationFrame(this.cursorFrame);
+      this.cursorFrame = null;
+    }
+    const source = this.map.getSource('cursor-source') as maplibregl.GeoJSONSource | undefined;
+    source?.setData({ type: 'FeatureCollection', features: [] });
   }
 
   public updateBufferLayer(bufferData: FeatureCollection): void {
@@ -103,6 +153,13 @@ export class MapEngine {
     }
   }
 
+  public setMaxZoom(maxZoom: number): void {
+    this.map.setMaxZoom(maxZoom);
+    if (this.map.getZoom() > maxZoom) {
+      this.map.setZoom(maxZoom);
+    }
+  }
+
   public onMapClick(handler: (lng: number, lat: number) => void): void {
     this.map.on('click', (e: MapMouseEvent) => {
       handler(e.lngLat.lng, e.lngLat.lat);
@@ -118,6 +175,7 @@ export class MapEngine {
   }
 
   public destroy(): void {
+    this.clearCursorPosition();
     this.map.remove();
   }
 }

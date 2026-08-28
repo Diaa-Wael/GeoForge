@@ -10,9 +10,10 @@ import type { ParcelFeatureCollection } from '../types/gis';
 import { MapControls, BasemapOption, BASEMAP_OPTIONS } from './MapControls';
 import { BufferTool, BufferResult } from './BufferTool';
 import { PrintReport } from './PrintReport';
+import { formatCoordinates, type CoordinateFormat } from '../gis/coordinateFormat';
 
 const DEFAULT_ZOOM = 11;
-const DEFAULT_BASEMAP_ID = 'light';
+const DEFAULT_BASEMAP_ID = 'dark';
 const DEFAULT_BUFFER_RADIUS = 250;
 const RESIDENTS_COUNT = 45;
 const RESIDENTS_RADIUS_KM = 3;
@@ -80,7 +81,6 @@ export const UnifiedMapContainer: React.FC = () => {
   const [locationBadge, setLocationBadge] = useState<string | null>(null);
 
   const [bearing, setBearing] = useState(0);
-  const [cursor, setCursor] = useState<{ lng: number; lat: number } | null>(null);
   const [activeBasemapId, setActiveBasemapId] = useState(DEFAULT_BASEMAP_ID);
 
   const [bufferActive, setBufferActive] = useState(false);
@@ -93,6 +93,9 @@ export const UnifiedMapContainer: React.FC = () => {
 
   const bufferActiveRef = useRef(bufferActive);
   const bufferRadiusRef = useRef(bufferRadius);
+  const cursorRef = useRef<{ lng: number; lat: number } | null>(null);
+  const positionReadoutRef = useRef<HTMLDivElement>(null);
+  const coordinateFormatRef = useRef<CoordinateFormat>('dd');
 
   useEffect(() => {
     document.body.classList.toggle('android-map-ui', isAndroid);
@@ -157,14 +160,29 @@ export const UnifiedMapContainer: React.FC = () => {
 
     const engine = new MapEngine(mapContainerRef.current.id, center, zoom, basemapStyle);
     mapEngineRef.current = engine;
+    engine.setMaxZoom(14);
     residentsRef.current = generateMockResidents(center, RESIDENTS_RADIUS_KM, RESIDENTS_COUNT);
 
     const map = engine.getMapInstance();
 
     const handleRotate = () => setBearing(map.getBearing());
-    const handleMouseMove = (e: { lngLat: { lng: number; lat: number } }) =>
-      setCursor({ lng: e.lngLat.lng, lat: e.lngLat.lat });
-    const handleMouseLeave = () => setCursor(null);
+    const handleMouseMove = (e: { lngLat: { lng: number; lat: number } }) => {
+      const position = { lng: e.lngLat.lng, lat: e.lngLat.lat };
+      cursorRef.current = position;
+      engine.updateCursorPosition(position.lng, position.lat);
+      if (positionReadoutRef.current) {
+        positionReadoutRef.current.textContent = formatCoordinates(
+          position.lat,
+          position.lng,
+          coordinateFormatRef.current,
+        );
+      }
+    };
+    const handleMouseLeave = () => {
+      cursorRef.current = null;
+      engine.clearCursorPosition();
+      if (positionReadoutRef.current) positionReadoutRef.current.textContent = '—';
+    };
     const handleMoveEnd = () => {
       const c = map.getCenter();
       writeMapStateToUrl({ center: [c.lng, c.lat], zoom: map.getZoom(), basemapId: activeBasemapId });
@@ -177,6 +195,17 @@ export const UnifiedMapContainer: React.FC = () => {
     map.getContainer().addEventListener('mouseleave', handleMouseLeave);
 
     const handleMapClick = (lng: number, lat: number) => {
+      const position = { lng, lat };
+      cursorRef.current = position;
+      engine.updateCursorPosition(lng, lat);
+      if (positionReadoutRef.current) {
+        positionReadoutRef.current.textContent = formatCoordinates(
+          lat,
+          lng,
+          coordinateFormatRef.current,
+        );
+      }
+
       if (!bufferActiveRef.current || !residentsRef.current) return;
 
       const radius = bufferRadiusRef.current;
@@ -227,6 +256,7 @@ export const UnifiedMapContainer: React.FC = () => {
     if (!map || !engine) return;
 
     map.setStyle(option.style);
+    engine.setMaxZoom(14);
     setActiveBasemapId(option.id);
 
     const c = map.getCenter();
@@ -293,7 +323,19 @@ export const UnifiedMapContainer: React.FC = () => {
 
       <MapControls
         bearing={bearing}
-        cursor={cursor}
+        positionReadoutRef={positionReadoutRef}
+        cursorPositionRef={cursorRef}
+        onCoordinateFormatChange={(format) => {
+          coordinateFormatRef.current = format;
+          const position = cursorRef.current;
+          if (positionReadoutRef.current && position) {
+            positionReadoutRef.current.textContent = formatCoordinates(
+              position.lat,
+              position.lng,
+              format,
+            );
+          }
+        }}
         activeBasemapId={activeBasemapId}
         onBasemapChange={handleBasemapChange}
         getMap={() => mapEngineRef.current?.getMapInstance() ?? null}

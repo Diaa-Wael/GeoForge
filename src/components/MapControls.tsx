@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import type { RefObject } from 'react';
+import { formatCoordinates, type CoordinateFormat } from '../gis/coordinateFormat';
 import {
   panel,
   groupLabel,
@@ -21,6 +23,10 @@ export interface BasemapOption {
 }
 
 const ESRI_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, and the GIS User Community';
+const RASTER_TILE_PAINT = {
+  'raster-fade-duration': 0,
+  'raster-resampling': 'linear',
+} as const;
 
 export const BASEMAP_OPTIONS: BasemapOption[] = [
   {
@@ -33,19 +39,20 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           type: 'raster',
           tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
           attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
         },
         'esri-dark-reference': {
           type: 'raster',
           tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
         },
       },
       layers: [
-        { id: 'esri-dark-base-layer', type: 'raster', source: 'esri-dark-base' },
-        { id: 'esri-dark-reference-layer', type: 'raster', source: 'esri-dark-reference' },
+        { id: 'esri-dark-loading-background', type: 'background', paint: { 'background-color': '#17212b' } },
+        { id: 'esri-dark-base-layer', type: 'raster', source: 'esri-dark-base', paint: RASTER_TILE_PAINT },
+        { id: 'esri-dark-reference-layer', type: 'raster', source: 'esri-dark-reference', paint: RASTER_TILE_PAINT },
       ],
     },
   },
@@ -59,19 +66,20 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           type: 'raster',
           tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
           attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
         },
         'esri-light-reference': {
           type: 'raster',
           tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
         },
       },
       layers: [
-        { id: 'esri-light-base-layer', type: 'raster', source: 'esri-light-base' },
-        { id: 'esri-light-reference-layer', type: 'raster', source: 'esri-light-reference' },
+        { id: 'esri-light-loading-background', type: 'background', paint: { 'background-color': '#e8eef5' } },
+        { id: 'esri-light-base-layer', type: 'raster', source: 'esri-light-base', paint: RASTER_TILE_PAINT },
+        { id: 'esri-light-reference-layer', type: 'raster', source: 'esri-light-reference', paint: RASTER_TILE_PAINT },
       ],
     },
   },
@@ -85,11 +93,14 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           type: 'raster',
           tiles: ['https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
           attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, USGS',
         },
       },
-      layers: [{ id: 'esri-streets-layer', type: 'raster', source: 'esri-streets' }],
+      layers: [
+        { id: 'esri-streets-loading-background', type: 'background', paint: { 'background-color': '#e8eef5' } },
+        { id: 'esri-streets-layer', type: 'raster', source: 'esri-streets', paint: RASTER_TILE_PAINT },
+      ],
     },
   },
   {
@@ -103,11 +114,14 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           // Note: Esri's REST tile scheme is {z}/{y}/{x} — not the usual {z}/{x}/{y}.
           tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
           attribution: ESRI_ATTRIBUTION,
         },
       },
-      layers: [{ id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery' }],
+      layers: [
+        { id: 'esri-imagery-loading-background', type: 'background', paint: { 'background-color': '#9ca3af' } },
+        { id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery', paint: RASTER_TILE_PAINT },
+      ],
     },
   },
   {
@@ -120,7 +134,7 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           type: 'raster',
           tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
           attribution: ESRI_ATTRIBUTION,
         },
         'esri-labels': {
@@ -129,12 +143,13 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
             'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
           ],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 14,
         },
       },
       layers: [
-        { id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery' },
-        { id: 'esri-labels-layer', type: 'raster', source: 'esri-labels' },
+        { id: 'esri-hybrid-loading-background', type: 'background', paint: { 'background-color': '#9ca3af' } },
+        { id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery', paint: RASTER_TILE_PAINT },
+        { id: 'esri-labels-layer', type: 'raster', source: 'esri-labels', paint: RASTER_TILE_PAINT },
       ],
     },
   },
@@ -148,11 +163,14 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
           type: 'raster',
           tiles: ['https://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          maxzoom: 16,
+          maxzoom: 18,
           attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS',
         },
       },
-      layers: [{ id: 'esri-topo-layer', type: 'raster', source: 'esri-topo' }],
+      layers: [
+        { id: 'esri-topo-loading-background', type: 'background', paint: { 'background-color': '#e5edf0' } },
+        { id: 'esri-topo-layer', type: 'raster', source: 'esri-topo', paint: RASTER_TILE_PAINT },
+      ],
     },
   },
 ];
@@ -165,7 +183,9 @@ interface GeocodeResult {
 
 interface MapControlsProps {
   bearing: number;
-  cursor: { lng: number; lat: number } | null;
+  positionReadoutRef: React.RefObject<HTMLDivElement | null>;
+  cursorPositionRef: RefObject<{ lng: number; lat: number } | null>;
+  onCoordinateFormatChange: (format: CoordinateFormat) => void;
   activeBasemapId: string;
   onBasemapChange: (option: BasemapOption) => void;
   getMap: () => MapLibreMap | null;
@@ -174,7 +194,9 @@ interface MapControlsProps {
 
 export const MapControls: React.FC<MapControlsProps> = ({
   bearing,
-  cursor,
+  positionReadoutRef,
+  cursorPositionRef,
+  onCoordinateFormatChange,
   activeBasemapId,
   onBasemapChange,
   getMap,
@@ -190,7 +212,17 @@ export const MapControls: React.FC<MapControlsProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isBasemapOpen, setIsBasemapOpen] = useState(true);
+  const [coordinateFormat, setCoordinateFormat] = useState<CoordinateFormat>('dd');
+  const [highlightedResult, setHighlightedResult] = useState(-1);
+  const searchRequestRef = React.useRef<AbortController | null>(null);
   const mapUiThemeStyle = getGisUiThemeStyle(activeBasemapId);
+
+  useEffect(() => {
+    const position = cursorPositionRef.current;
+    if (positionReadoutRef.current && position) {
+      positionReadoutRef.current.textContent = formatCoordinates(position.lat, position.lng, coordinateFormat);
+    }
+  }, [coordinateFormat, cursorPositionRef, positionReadoutRef]);
 
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -234,28 +266,80 @@ export const MapControls: React.FC<MapControlsProps> = ({
     );
   };
 
-  const handleSearchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed) return;
+  const performSearch = useCallback(async (trimmed: string) => {
+    searchRequestRef.current?.abort();
+    if (trimmed.length < 2) {
+      setResults([]);
+      setSearchError(null);
+      setIsSearching(false);
+      return;
+    }
 
+    const controller = new AbortController();
+    searchRequestRef.current = controller;
     setIsSearching(true);
     setSearchError(null);
     setResults([]);
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(trimmed)}`,
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=${encodeURIComponent(trimmed)}`,
+        {
+          // Browsers intentionally forbid setting User-Agent. The browser
+          // supplies its own UA; a server-side proxy is needed for an app UA.
+          headers: {
+            Accept: 'application/json',
+            'Accept-Language': 'en',
+          },
+          referrerPolicy: 'strict-origin-when-cross-origin',
+          signal: controller.signal,
+        },
       );
       if (!response.ok) throw new Error('Search request failed');
       const data: GeocodeResult[] = await response.json();
       setResults(data);
       if (data.length === 0) setSearchError('No results found.');
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       setSearchError('Search failed. Try again.');
     } finally {
-      setIsSearching(false);
+      if (searchRequestRef.current === controller) setIsSearching(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const timer = window.setTimeout(() => {
+      void performSearch(query.trim());
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [performSearch, query, searchOpen]);
+
+  useEffect(() => {
+    setHighlightedResult(-1);
+  }, [results]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' && results.length > 0) {
+      e.preventDefault();
+      setHighlightedResult((index) => (index + 1) % results.length);
+    } else if (e.key === 'ArrowUp' && results.length > 0) {
+      e.preventDefault();
+      setHighlightedResult((index) => (index <= 0 ? results.length - 1 : index - 1));
+    } else if (e.key === 'Enter' && highlightedResult >= 0 && results[highlightedResult]) {
+      e.preventDefault();
+      handleResultSelect(results[highlightedResult]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setSearchOpen(false);
+      setResults([]);
+      setQuery('');
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void performSearch(query.trim());
   };
 
   const handleResultSelect = (result: GeocodeResult) => {
@@ -424,6 +508,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 placeholder="Place name or address"
                 autoFocus
                 className={input}
@@ -451,7 +536,13 @@ export const MapControls: React.FC<MapControlsProps> = ({
             {results.length > 0 && (
               <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
                 {results.map((result, idx) => (
-                  <button key={idx} type="button" onClick={() => handleResultSelect(result)} className={resultRow}>
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleResultSelect(result)}
+                    className={`${resultRow} ${highlightedResult === idx ? 'gis-result-row-highlighted' : ''}`}
+                    aria-selected={highlightedResult === idx}
+                  >
                     {result.display_name}
                   </button>
                 ))}
@@ -471,7 +562,22 @@ export const MapControls: React.FC<MapControlsProps> = ({
         <div className={divider} />
 
         <div className={groupLabel}>Position</div>
-        <div className={readout}>{cursor ? `${cursor.lat.toFixed(5)}, ${cursor.lng.toFixed(5)}` : '—'}</div>
+        <div className="gis-coordinate-toggle" role="group" aria-label="Coordinate format">
+          {(['dd', 'dms'] as CoordinateFormat[]).map((format) => (
+            <button
+              key={format}
+              type="button"
+              className={`gis-btn ${coordinateFormat === format ? 'gis-btn-active' : ''}`}
+              onClick={() => {
+                setCoordinateFormat(format);
+                onCoordinateFormatChange(format);
+              }}
+            >
+              {format === 'dd' ? 'DD' : 'DMS'}
+            </button>
+          ))}
+        </div>
+        <div ref={positionReadoutRef} className={readout}>—</div>
       </div>
     </>,
     document.body,
