@@ -16,8 +16,12 @@ interface BufferToolProps {
   result: BufferResult | null;
   coverage: CoverageStats | null;
   activeBasemapId: string;
+  measurementMode?: 'none' | 'distance' | 'area';
+  measurementSummary?: string | null;
   onToggleActive: () => void;
   onRadiusChange: (radius: number) => void;
+  onMeasurementModeChange?: (mode: 'none' | 'distance' | 'area') => void;
+  onClearMeasurement?: () => void;
   onExportGeoJSON: () => void;
   onExportPdf: () => void;
 }
@@ -28,20 +32,29 @@ export const BufferTool: React.FC<BufferToolProps> = ({
   result,
   coverage,
   activeBasemapId,
+  measurementMode = 'none',
+  measurementSummary,
   onToggleActive,
   onRadiusChange,
+  onMeasurementModeChange,
+  onClearMeasurement,
   onExportGeoJSON,
   onExportPdf,
 }) => {
   const [isOpen, setIsOpen] = React.useState(() => typeof window === 'undefined' || window.innerWidth > 640);
   const mapUiThemeStyle = getGisUiThemeStyle(activeBasemapId);
 
+  const handleToggleActive = () => {
+    setIsOpen(false);
+    onToggleActive();
+  };
+
   return createPortal(
     <div
-      className={`${panel} gis-service-panel gis-mobile-service-panel ${isOpen ? '' : 'collapsed'} ${result ? 'has-result' : ''} bottom-4 left-4`}
+      className={`${panel} gis-service-panel gis-mobile-service-panel ${isOpen ? '' : 'collapsed'} ${result ? 'has-result' : ''}`}
       style={{
         ...mapUiThemeStyle,
-        width: isOpen ? 'min(18rem, calc(100vw - 2rem))' : 'min(13.5rem, calc(100vw - 2rem))',
+        width: isOpen ? 'min(15.5rem, calc(100vw - 1.5rem))' : 'min(12.5rem, calc(100vw - 1.5rem))',
       }}
     >
       <div className="gis-service-header">
@@ -77,14 +90,16 @@ export const BufferTool: React.FC<BufferToolProps> = ({
         <>
           <button
             type="button"
-            onClick={onToggleActive}
+            onClick={handleToggleActive}
             className={`gis-btn gis-service-button ${active ? 'gis-btn-active' : ''}`}
           >
             <span
               className="gis-service-dot"
               style={{ backgroundColor: active ? 'var(--gis-accent)' : 'var(--gis-text-faint)' }}
             />
-            {active ? 'Click the map to place a service point' : 'Start service area analysis'}
+            <span className="gis-service-button-text">
+              {active ? 'Click the map to place a service point' : 'Start service area analysis'}
+            </span>
           </button>
 
           {active && (
@@ -167,6 +182,41 @@ export const BufferTool: React.FC<BufferToolProps> = ({
                     </button>
                   </div>
                 </>
+              )}
+
+              <div className={divider} />
+              <div className={groupLabel}>Geo tools</div>
+              <div className="grid grid-cols-2 gap-1 px-1">
+                <button
+                  type="button"
+                  onClick={() => onMeasurementModeChange?.(measurementMode === 'distance' ? 'none' : 'distance')}
+                  className={`gis-btn gis-label-btn justify-center ${measurementMode === 'distance' ? 'gis-btn-active' : ''}`}
+                >
+                  Distance
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onMeasurementModeChange?.(measurementMode === 'area' ? 'none' : 'area')}
+                  className={`gis-btn gis-label-btn justify-center ${measurementMode === 'area' ? 'gis-btn-active' : ''}`}
+                >
+                  Area
+                </button>
+              </div>
+
+              <div className="px-1 mt-1">
+                <button
+                  type="button"
+                  onClick={onClearMeasurement}
+                  className="gis-btn gis-label-btn justify-center w-full"
+                >
+                  Clear measurement
+                </button>
+              </div>
+
+              {measurementSummary && (
+                <div className={`${readout} mt-2`}>
+                  {measurementSummary}
+                </div>
               )}
             </>
           )}

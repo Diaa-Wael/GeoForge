@@ -6,6 +6,11 @@ import { resolveInitialLocation } from '../gis/locationResolver';
 import { readMapStateFromUrl, writeMapStateToUrl } from '../gis/urlState';
 import { generateMockResidents, scoreCoverage, CoverageStats, ResidentsCollection } from '../gis/serviceAreaAnalysis';
 import { downloadBufferGeoJSON } from '../gis/exportUtils';
+import {
+  measureAreaFromPoints,
+  measureDistanceBetweenPoints,
+  type MeasurementMode,
+} from '../gis/measurementTools';
 import type { ParcelFeatureCollection } from '../types/gis';
 import { MapControls, BasemapOption, BASEMAP_OPTIONS } from './MapControls';
 import { BufferTool, BufferResult } from './BufferTool';
@@ -13,7 +18,7 @@ import { PrintReport } from './PrintReport';
 import { formatCoordinates, type CoordinateFormat } from '../gis/coordinateFormat';
 
 const DEFAULT_ZOOM = 11;
-const DEFAULT_BASEMAP_ID = 'dark';
+const DEFAULT_BASEMAP_ID = 'light';
 const DEFAULT_BUFFER_RADIUS = 250;
 const RESIDENTS_COUNT = 45;
 const RESIDENTS_RADIUS_KM = 3;
@@ -87,12 +92,16 @@ export const UnifiedMapContainer: React.FC = () => {
   const [bufferRadius, setBufferRadius] = useState(DEFAULT_BUFFER_RADIUS);
   const [bufferResult, setBufferResult] = useState<BufferResult | null>(null);
   const [coverage, setCoverage] = useState<CoverageStats | null>(null);
+  const [measurementMode, setMeasurementMode] = useState<MeasurementMode>('none');
+  const [measurementSummary, setMeasurementSummary] = useState<string | null>(null);
   const [snapshotDataUrl, setSnapshotDataUrl] = useState<string | null>(null);
 
   const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 
   const bufferActiveRef = useRef(bufferActive);
   const bufferRadiusRef = useRef(bufferRadius);
+  const measurementModeRef = useRef<MeasurementMode>('none');
+  const measurementPointsRef = useRef<[number, number][]>([]);
   const cursorRef = useRef<{ lng: number; lat: number } | null>(null);
   const positionReadoutRef = useRef<HTMLDivElement>(null);
   const coordinateFormatRef = useRef<CoordinateFormat>('dd');
@@ -109,6 +118,23 @@ export const UnifiedMapContainer: React.FC = () => {
   useEffect(() => {
     bufferRadiusRef.current = bufferRadius;
   }, [bufferRadius]);
+
+  useEffect(() => {
+    measurementModeRef.current = measurementMode;
+    if (measurementMode === 'none') {
+      measurementPointsRef.current = [];
+      setMeasurementSummary(null);
+      mapEngineRef.current?.clearMeasurementLayer();
+      return;
+    }
+
+    if (measurementMode === 'distance') {
+      setMeasurementSummary('Tap a second point to measure the geodesic distance.');
+      return;
+    }
+
+    setMeasurementSummary('Click 3 or more points to calculate area and perimeter.');
+  }, [measurementMode]);
 
   useEffect(() => {
     const map = mapEngineRef.current?.getMapInstance();
@@ -206,6 +232,61 @@ export const UnifiedMapContainer: React.FC = () => {
         );
       }
 
+      if (measurementModeRef.current !== 'none') {
+        const point: [number, number] = [lng, lat];
+        const nextMeasurementPoints = [...measurementPointsRef.current, point];
+
+        if (measurementModeRef.current === 'distance') {
+          const limitedPoints = nextMeasurementPoints.slice(-2);
+          measurementPointsRef.current = limitedPoints;
+
+          if (limitedPoints.length === 2) {
+            const result = measureDistanceBetweenPoints(limitedPoints[0], limitedPoints[1]);
+            engine.updateMeasurementLayer(result.geometry);
+            setMeasurementSummary(
+              `Distance: ${result.kilometers.toFixed(2)} km · ${result.meters.toFixed(0)} m · ${result.bearing.toFixed(0)}°`,
+            );
+          } else {
+            engine.updateMeasurementLayer({
+              type: 'FeatureCollection',
+              features: [{
+                type: 'Feature',
+                properties: {},
+                geometry: { type: 'LineString', coordinates: limitedPoints },
+              }],
+            });
+            setMeasurementSummary('Tap a second point to measure the geodesic distance.');
+          }
+          return;
+        }
+
+        if (measurementModeRef.current === 'area') {
+          const areaPoints = nextMeasurementPoints;
+          measurementPointsRef.current = areaPoints;
+
+          if (areaPoints.length >= 3) {
+            const result = measureAreaFromPoints(areaPoints);
+            if (result) {
+              engine.updateMeasurementLayer(result.geometry);
+              setMeasurementSummary(
+                `Area: ${result.squareKilometers.toFixed(3)} km² · Perimeter: ${result.perimeterKilometers.toFixed(2)} km`,
+              );
+            }
+          } else {
+            engine.updateMeasurementLayer({
+              type: 'FeatureCollection',
+              features: areaPoints.map((point) => ({
+                type: 'Feature',
+                properties: {},
+                geometry: { type: 'Point', coordinates: point },
+              })),
+            });
+            setMeasurementSummary('Click 3 or more points to calculate area and perimeter.');
+          }
+          return;
+        }
+      }
+
       if (!bufferActiveRef.current || !residentsRef.current) return;
 
       const radius = bufferRadiusRef.current;
@@ -299,6 +380,17 @@ export const UnifiedMapContainer: React.FC = () => {
     });
   }, [bufferResult]);
 
+  const handleMeasurementModeChange = useCallback((mode: MeasurementMode) => {
+    setMeasurementMode((prev) => (prev === mode ? 'none' : mode));
+  }, []);
+
+  const handleClearMeasurement = useCallback(() => {
+    measurementPointsRef.current = [];
+    setMeasurementMode('none');
+    mapEngineRef.current?.clearMeasurementLayer();
+    setMeasurementSummary(null);
+  }, []);
+
   if (isResolvingLocation) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-[#0B0D10] text-[#7C8791] text-sm font-sans gap-2">
@@ -347,8 +439,12 @@ export const UnifiedMapContainer: React.FC = () => {
         result={bufferResult}
         coverage={coverage}
         activeBasemapId={activeBasemapId}
+        measurementMode={measurementMode}
+        measurementSummary={measurementSummary}
         onToggleActive={handleToggleBufferActive}
         onRadiusChange={setBufferRadius}
+        onMeasurementModeChange={handleMeasurementModeChange}
+        onClearMeasurement={handleClearMeasurement}
         onExportGeoJSON={handleExportGeoJSON}
         onExportPdf={handleExportPdf}
       />

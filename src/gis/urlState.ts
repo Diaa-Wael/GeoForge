@@ -22,7 +22,7 @@ export function readMapStateFromUrl(): UrlMapState | null {
   return {
     center: [lng, lat],
     zoom,
-    basemapId: basemapId ?? 'dark',
+    basemapId: basemapId ?? 'light',
   };
 }
 

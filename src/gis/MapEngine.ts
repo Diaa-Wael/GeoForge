@@ -5,6 +5,7 @@ import type { ParcelFeatureCollection } from '../types/gis';
 export class MapEngine {
   private map: Map;
   private pendingBufferData: FeatureCollection | null = null;
+  private pendingMeasurementData: FeatureCollection | null = null;
   private pendingCursor: [number, number] | null = null;
   private cursorFrame: number | null = null;
 
@@ -100,9 +101,52 @@ export class MapEngine {
       data: { type: 'FeatureCollection', features: [] },
     });
 
+    this.map.addSource('measurement-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+
+    this.map.addLayer({
+      id: 'measurement-line',
+      type: 'line',
+      source: 'measurement-source',
+      paint: {
+        'line-color': '#22c55e',
+        'line-width': 3,
+        'line-dasharray': [2, 1.5],
+      },
+    });
+
+    this.map.addLayer({
+      id: 'measurement-fill',
+      type: 'fill',
+      source: 'measurement-source',
+      paint: {
+        'fill-color': '#22c55e',
+        'fill-opacity': 0.22,
+      },
+    });
+
+    this.map.addLayer({
+      id: 'measurement-point',
+      type: 'circle',
+      source: 'measurement-source',
+      paint: {
+        'circle-radius': 5,
+        'circle-color': '#bbf7d0',
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#14532d',
+      },
+    });
+
     if (this.pendingBufferData) {
       (this.map.getSource('buffer-source') as maplibregl.GeoJSONSource).setData(this.pendingBufferData);
       this.pendingBufferData = null;
+    }
+
+    if (this.pendingMeasurementData) {
+      (this.map.getSource('measurement-source') as maplibregl.GeoJSONSource).setData(this.pendingMeasurementData);
+      this.pendingMeasurementData = null;
     }
   }
 
@@ -145,6 +189,22 @@ export class MapEngine {
     }
 
     this.pendingBufferData = bufferData;
+  }
+
+  public updateMeasurementLayer(measurementData: FeatureCollection): void {
+    const source = this.map.getSource('measurement-source') as maplibregl.GeoJSONSource | undefined;
+    if (source) {
+      source.setData(measurementData);
+      return;
+    }
+
+    this.pendingMeasurementData = measurementData;
+  }
+
+  public clearMeasurementLayer(): void {
+    const source = this.map.getSource('measurement-source') as maplibregl.GeoJSONSource | undefined;
+    source?.setData({ type: 'FeatureCollection', features: [] });
+    this.pendingMeasurementData = null;
   }
 
   public toggleLayerVisibility(layerId: string, visible: boolean): void {

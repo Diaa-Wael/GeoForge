@@ -30,33 +30,6 @@ const RASTER_TILE_PAINT = {
 
 export const BASEMAP_OPTIONS: BasemapOption[] = [
   {
-    id: 'dark',
-    label: 'Dark',
-    style: {
-      version: 8,
-      sources: {
-        'esri-dark-base': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-        },
-        'esri-dark-reference': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-        },
-      },
-      layers: [
-        { id: 'esri-dark-loading-background', type: 'background', paint: { 'background-color': '#17212b' } },
-        { id: 'esri-dark-base-layer', type: 'raster', source: 'esri-dark-base', paint: RASTER_TILE_PAINT },
-        { id: 'esri-dark-reference-layer', type: 'raster', source: 'esri-dark-reference', paint: RASTER_TILE_PAINT },
-      ],
-    },
-  },
-  {
     id: 'light',
     label: 'Light',
     style: {
@@ -80,6 +53,33 @@ export const BASEMAP_OPTIONS: BasemapOption[] = [
         { id: 'esri-light-loading-background', type: 'background', paint: { 'background-color': '#e8eef5' } },
         { id: 'esri-light-base-layer', type: 'raster', source: 'esri-light-base', paint: RASTER_TILE_PAINT },
         { id: 'esri-light-reference-layer', type: 'raster', source: 'esri-light-reference', paint: RASTER_TILE_PAINT },
+      ],
+    },
+  },
+  {
+    id: 'dark',
+    label: 'Dark',
+    style: {
+      version: 8,
+      sources: {
+        'esri-dark-base': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 14,
+          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+        },
+        'esri-dark-reference': {
+          type: 'raster',
+          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          maxzoom: 14,
+        },
+      },
+      layers: [
+        { id: 'esri-dark-loading-background', type: 'background', paint: { 'background-color': '#17212b' } },
+        { id: 'esri-dark-base-layer', type: 'raster', source: 'esri-dark-base', paint: RASTER_TILE_PAINT },
+        { id: 'esri-dark-reference-layer', type: 'raster', source: 'esri-dark-reference', paint: RASTER_TILE_PAINT },
       ],
     },
   },
