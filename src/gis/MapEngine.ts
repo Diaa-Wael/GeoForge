@@ -1,6 +1,5 @@
 import maplibregl, { Map, MapMouseEvent, StyleSpecification } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
-import type { ParcelFeatureCollection } from '../types/gis';
 import { mapTilerStyle } from './mapTiler';
 
 export class MapEngine {
@@ -49,33 +48,8 @@ export class MapEngine {
     this.map.on('load', callback);
   }
 
-  public initVectorLayers(parcels: ParcelFeatureCollection): void {
-    if (this.map.getSource('parcels-source')) return;
-
-    this.map.addSource('parcels-source', {
-      type: 'geojson',
-      data: parcels,
-    });
-
-    this.map.addLayer({
-      id: 'parcels-fill',
-      type: 'fill',
-      source: 'parcels-source',
-      paint: {
-        'fill-color': '#38bdf8',
-        'fill-opacity': 0.3,
-      },
-    });
-
-    this.map.addLayer({
-      id: 'parcels-line',
-      type: 'line',
-      source: 'parcels-source',
-      paint: {
-        'line-color': '#38bdf8',
-        'line-width': 2,
-      },
-    });
+  public initVectorLayers(): void {
+    if (this.map.getSource('buffer-source')) return;
 
     this.map.addSource('buffer-source', {
       type: 'geojson',

@@ -169,7 +169,7 @@ export const BufferTool: React.FC<BufferToolProps> = ({
               {result && (
                 <>
                   <div className={divider} />
-                  <div className="flex gap-1 px-1">
+                  <div className="gis-action-row px-1">
                     <button
                       type="button"
                       onClick={onExportGeoJSON}

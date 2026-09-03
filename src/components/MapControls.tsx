@@ -92,7 +92,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [isBasemapOpen, setIsBasemapOpen] = useState(true);
+  const [isBasemapOpen, setIsBasemapOpen] = useState(false);
   const [coordinateFormat, setCoordinateFormat] = useState<CoordinateFormat>('dd');
   const [highlightedResult, setHighlightedResult] = useState(-1);
   const searchRequestRef = React.useRef<AbortController | null>(null);
@@ -335,7 +335,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
 
       {/* Left side: basemap, search, position */}
       <div
-        className={`${panel} gis-basemap-panel top-4 left-4 p-2 transition-all duration-200`}
+        className={`${panel} gis-basemap-panel ${isBasemapOpen ? '' : 'collapsed'} top-4 left-4 p-2 transition-all duration-200`}
         style={{
           ...mapUiThemeStyle,
           width: isBasemapOpen ? 'min(18rem, calc(100vw - 2rem))' : 'min(12rem, calc(100vw - 2rem))',
@@ -378,87 +378,97 @@ export const MapControls: React.FC<MapControlsProps> = ({
           </div>
         )}
 
-        <div className={divider} />
+        <div className="gis-basemap-details">
+          <div className={divider} />
 
-        <div className={groupLabel}>Search</div>
+          <div className={groupLabel}>Search</div>
 
-        {searchOpen ? (
-          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-1.5">
-            <div className="flex gap-1">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                placeholder="Place name or address"
-                autoFocus
-                className={input}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchOpen(false);
-                  setResults([]);
-                  setQuery('');
-                  setSearchError(null);
-                }}
-                className={`${iconBtn(false)} flex-shrink-0`}
-                style={{ width: '28px', height: '28px' }}
-                aria-label="Close search"
-                title="Close search"
-              >
-                ✕
-              </button>
-            </div>
-
-            {isSearching && <p className="text-[10px] px-1 text-[var(--gis-text-muted)]">Searching…</p>}
-            {searchError && <p className="text-[10px] px-1" style={{ color: '#b5674f' }}>{searchError}</p>}
-
-            {results.length > 0 && (
-              <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
-                {results.map((result, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleResultSelect(result)}
-                    className={`${resultRow} ${highlightedResult === idx ? 'gis-result-row-highlighted' : ''}`}
-                    aria-selected={highlightedResult === idx}
-                  >
-                    {result.display_name}
-                  </button>
-                ))}
+          {searchOpen ? (
+            <form onSubmit={handleSearchSubmit} className="flex flex-col gap-1.5">
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Place name or address"
+                  autoFocus
+                  className={input}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchOpen(false);
+                    setResults([]);
+                    setQuery('');
+                    setSearchError(null);
+                  }}
+                  className={`${iconBtn(false)} flex-shrink-0`}
+                  style={{ width: '28px', height: '28px' }}
+                  aria-label="Close search"
+                  title="Close search"
+                >
+                  ✕
+                </button>
               </div>
-            )}
-          </form>
-        ) : (
-          <button type="button" onClick={() => setSearchOpen(true)} className={searchTrigger}>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M11 11 L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            Search a place
-          </button>
-        )}
 
-        <div className={divider} />
+              {isSearching && <p className="text-[10px] px-1 text-[var(--gis-text-muted)]">Searching…</p>}
+              {searchError && <p className="text-[10px] px-1" style={{ color: '#b5674f' }}>{searchError}</p>}
 
-        <div className={groupLabel}>Position</div>
-        <div className="gis-coordinate-toggle" role="group" aria-label="Coordinate format">
-          {(['dd', 'dms'] as CoordinateFormat[]).map((format) => (
-            <button
-              key={format}
-              type="button"
-              className={`gis-btn ${coordinateFormat === format ? 'gis-btn-active' : ''}`}
-              onClick={() => {
-                setCoordinateFormat(format);
-                onCoordinateFormatChange(format);
-              }}
-            >
-              {format === 'dd' ? 'DD' : 'DMS'}
+              {results.length > 0 && (
+                <div className="flex flex-col gap-0.5 max-h-40 overflow-y-auto">
+                  {results.map((result, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleResultSelect(result)}
+                      className={`${resultRow} ${highlightedResult === idx ? 'gis-result-row-highlighted' : ''}`}
+                      aria-selected={highlightedResult === idx}
+                    >
+                      {result.display_name}
+                      <span className="gis-result-coordinate">
+                        {Number(result.lat).toFixed(4)}, {Number(result.lon).toFixed(4)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </form>
+          ) : (
+            <button type="button" onClick={() => setSearchOpen(true)} className={searchTrigger}>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M11 11 L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Search a place
             </button>
-          ))}
+          )}
+
+          <div className={divider} />
+
+          <div className={groupLabel}>Position</div>
+          <div className="gis-coordinate-control" role="group" aria-label="Coordinate format">
+            <span className="gis-coordinate-label">Format</span>
+            <div className="gis-coordinate-toggle">
+              {(['dd', 'dms'] as CoordinateFormat[]).map((format) => (
+                <button
+                  key={format}
+                  type="button"
+                  className={`gis-btn ${coordinateFormat === format ? 'gis-btn-active' : ''}`}
+                  onClick={() => {
+                    setCoordinateFormat(format);
+                    onCoordinateFormatChange(format);
+                  }}
+                  aria-pressed={coordinateFormat === format}
+                  title={format === 'dd' ? 'Decimal degrees' : 'Degrees, minutes, and seconds'}
+                >
+                  {format === 'dd' ? 'Decimal' : 'DMS'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div ref={positionReadoutRef} className={readout}>—</div>
         </div>
-        <div ref={positionReadoutRef} className={readout}>—</div>
       </div>
     </>,
     document.body,

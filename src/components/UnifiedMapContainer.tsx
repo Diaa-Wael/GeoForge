@@ -11,7 +11,6 @@ import {
   measureDistanceBetweenPoints,
   type MeasurementMode,
 } from '../gis/measurementTools';
-import type { ParcelFeatureCollection } from '../types/gis';
 import { MapControls, BasemapOption, BASEMAP_OPTIONS } from './MapControls';
 import { BufferTool, BufferResult } from './BufferTool';
 import { PrintReport } from './PrintReport';
@@ -22,37 +21,6 @@ const DEFAULT_BASEMAP_ID = 'light';
 const DEFAULT_BUFFER_RADIUS = 250;
 const RESIDENTS_COUNT = 45;
 const RESIDENTS_RADIUS_KM = 3;
-
-// Sample parcels shown as context near wherever the map opens.
-function buildMockParcels(center: [number, number]): ParcelFeatureCollection {
-  const [lng, lat] = center;
-  const d = 0.0025;
-  return {
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: { parcelId: 'PARCEL-001', zoningCode: 'C-3', acreage: 0.625 },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[
-            [lng - d, lat - d], [lng, lat - d], [lng, lat + d], [lng - d, lat + d], [lng - d, lat - d],
-          ]],
-        },
-      },
-      {
-        type: 'Feature',
-        properties: { parcelId: 'PARCEL-002', zoningCode: 'R-1', acreage: 0.42 },
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[
-            [lng, lat - d], [lng + d, lat - d], [lng + d, lat + d], [lng, lat + d], [lng, lat - d],
-          ]],
-        },
-      },
-    ],
-  };
-}
 
 function addResidentsLayer(engine: MapEngine, residents: ResidentsCollection) {
   const map = engine.getMapInstance();
@@ -312,7 +280,7 @@ export const UnifiedMapContainer: React.FC = () => {
     engine.onMapClick(handleMapClick);
 
     engine.onReady(() => {
-      engine.initVectorLayers(buildMockParcels(center));
+      engine.initVectorLayers();
       if (residentsRef.current) addResidentsLayer(engine, residentsRef.current);
     });
 
@@ -341,10 +309,10 @@ export const UnifiedMapContainer: React.FC = () => {
     const c = map.getCenter();
     writeMapStateToUrl({ center: [c.lng, c.lat], zoom: map.getZoom(), basemapId: option.id });
 
-    // setStyle() wipes custom sources/layers — re-add parcels, residents, and
-    // redraw the last buffer once the new style has finished loading.
+    // setStyle() wipes custom sources/layers — re-add residents and redraw the
+    // last buffer once the new style has finished loading.
     map.once('style.load', () => {
-      engine.initVectorLayers(buildMockParcels(initialViewRef.current.center));
+      engine.initVectorLayers();
       if (residentsRef.current) addResidentsLayer(engine, residentsRef.current);
 
       if (bufferResult) {
