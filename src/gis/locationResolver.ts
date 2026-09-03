@@ -49,7 +49,9 @@ function getLocationOfTheDay(): ResolvedLocation {
 async function tryIpGeolocation(): Promise<ResolvedLocation | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    // Location lookup is optional; do not make the map wait several seconds
+    // when the service is unavailable or slow.
+    const timeout = setTimeout(() => controller.abort(), 800);
 
     const response = await fetch('https://ipwho.is/', { signal: controller.signal });
     clearTimeout(timeout);

@@ -186,7 +186,6 @@ export const UnifiedMapContainer: React.FC = () => {
 
     const engine = new MapEngine(mapContainerRef.current.id, center, zoom, basemapStyle);
     mapEngineRef.current = engine;
-    engine.setMaxZoom(14);
     residentsRef.current = generateMockResidents(center, RESIDENTS_RADIUS_KM, RESIDENTS_COUNT);
 
     const map = engine.getMapInstance();
@@ -337,7 +336,6 @@ export const UnifiedMapContainer: React.FC = () => {
     if (!map || !engine) return;
 
     map.setStyle(option.style);
-    engine.setMaxZoom(14);
     setActiveBasemapId(option.id);
 
     const c = map.getCenter();

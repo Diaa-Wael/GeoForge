@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
 import type { RefObject } from 'react';
 import { formatCoordinates, type CoordinateFormat } from '../gis/coordinateFormat';
+import { mapTilerStyle } from '../gis/mapTiler';
 import {
   panel,
   groupLabel,
@@ -22,156 +23,36 @@ export interface BasemapOption {
   style: string | StyleSpecification;
 }
 
-const ESRI_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics, and the GIS User Community';
-const RASTER_TILE_PAINT = {
-  'raster-fade-duration': 0,
-  'raster-resampling': 'linear',
-} as const;
-
 export const BASEMAP_OPTIONS: BasemapOption[] = [
   {
     id: 'light',
     label: 'Light',
-    style: {
-      version: 8,
-      sources: {
-        'esri-light-base': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-        },
-        'esri-light-reference': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-        },
-      },
-      layers: [
-        { id: 'esri-light-loading-background', type: 'background', paint: { 'background-color': '#e8eef5' } },
-        { id: 'esri-light-base-layer', type: 'raster', source: 'esri-light-base', paint: RASTER_TILE_PAINT },
-        { id: 'esri-light-reference-layer', type: 'raster', source: 'esri-light-reference', paint: RASTER_TILE_PAINT },
-      ],
-    },
+    style: mapTilerStyle('basic-v2'),
   },
   {
     id: 'dark',
     label: 'Dark',
-    style: {
-      version: 8,
-      sources: {
-        'esri-dark-base': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-        },
-        'esri-dark-reference': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-        },
-      },
-      layers: [
-        { id: 'esri-dark-loading-background', type: 'background', paint: { 'background-color': '#17212b' } },
-        { id: 'esri-dark-base-layer', type: 'raster', source: 'esri-dark-base', paint: RASTER_TILE_PAINT },
-        { id: 'esri-dark-reference-layer', type: 'raster', source: 'esri-dark-reference', paint: RASTER_TILE_PAINT },
-      ],
-    },
+    style: mapTilerStyle('dataviz-dark'),
   },
   {
     id: 'streets',
     label: 'Streets',
-    style: {
-      version: 8,
-      sources: {
-        'esri-streets': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, USGS',
-        },
-      },
-      layers: [
-        { id: 'esri-streets-loading-background', type: 'background', paint: { 'background-color': '#e8eef5' } },
-        { id: 'esri-streets-layer', type: 'raster', source: 'esri-streets', paint: RASTER_TILE_PAINT },
-      ],
-    },
+    style: mapTilerStyle('streets-v4'),
   },
   {
     id: 'satellite',
     label: 'Satellite',
-    style: {
-      version: 8,
-      sources: {
-        'esri-imagery': {
-          type: 'raster',
-          // Note: Esri's REST tile scheme is {z}/{y}/{x} — not the usual {z}/{x}/{y}.
-          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-          attribution: ESRI_ATTRIBUTION,
-        },
-      },
-      layers: [
-        { id: 'esri-imagery-loading-background', type: 'background', paint: { 'background-color': '#9ca3af' } },
-        { id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery', paint: RASTER_TILE_PAINT },
-      ],
-    },
+    style: mapTilerStyle('satellite'),
   },
   {
     id: 'hybrid',
     label: 'Hybrid',
-    style: {
-      version: 8,
-      sources: {
-        'esri-imagery': {
-          type: 'raster',
-          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 14,
-          attribution: ESRI_ATTRIBUTION,
-        },
-        'esri-labels': {
-          type: 'raster',
-          tiles: [
-            'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-          ],
-          tileSize: 256,
-          maxzoom: 14,
-        },
-      },
-      layers: [
-        { id: 'esri-hybrid-loading-background', type: 'background', paint: { 'background-color': '#9ca3af' } },
-        { id: 'esri-imagery-layer', type: 'raster', source: 'esri-imagery', paint: RASTER_TILE_PAINT },
-        { id: 'esri-labels-layer', type: 'raster', source: 'esri-labels', paint: RASTER_TILE_PAINT },
-      ],
-    },
+    style: mapTilerStyle('hybrid'),
   },
   {
     id: 'topo',
     label: 'Topo',
-    style: {
-      version: 8,
-      sources: {
-        'esri-topo': {
-          type: 'raster',
-          tiles: ['https://services.arcgisonline.com/arcgis/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          maxzoom: 18,
-          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS',
-        },
-      },
-      layers: [
-        { id: 'esri-topo-loading-background', type: 'background', paint: { 'background-color': '#e5edf0' } },
-        { id: 'esri-topo-layer', type: 'raster', source: 'esri-topo', paint: RASTER_TILE_PAINT },
-      ],
-    },
+    style: mapTilerStyle('outdoor-v2'),
   },
 ];
 

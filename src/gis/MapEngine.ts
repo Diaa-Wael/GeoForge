@@ -1,6 +1,7 @@
 import maplibregl, { Map, MapMouseEvent, StyleSpecification } from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import type { ParcelFeatureCollection } from '../types/gis';
+import { mapTilerStyle } from './mapTiler';
 
 export class MapEngine {
   private map: Map;
@@ -20,16 +21,15 @@ export class MapEngine {
 
     this.map = new maplibregl.Map({
       container: containerId,
-      style: style ?? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      style: style ?? mapTilerStyle('basic-v2'),
       center: center,
       zoom: zoom,
-      maxZoom: 14,
       renderWorldCopies: false,
       refreshExpiredTiles: false,
       // Keep more nearby tiles on desktop, but avoid excessive RAM use on
       // phones and tablets while still retaining parent/adjacent zoom tiles.
-      maxTileCacheSize: isTouchDevice ? 256 : 768,
-      maxTileCacheZoomLevels: isTouchDevice ? 6 : 10,
+      maxTileCacheSize: isTouchDevice ? 128 : 384,
+      maxTileCacheZoomLevels: isTouchDevice ? 4 : 6,
       fadeDuration: 0,
       cancelPendingTileRequestsWhileZooming: true,
       collectResourceTiming: false,
@@ -38,13 +38,9 @@ export class MapEngine {
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
-      // Needed so getCanvas().toDataURL() can capture the current view for
-      // the PDF export report — small perf cost, acceptable for this scale.
-      canvasContextAttributes: { preserveDrawingBuffer: true },
     });
 
     this.map.setRenderWorldCopies(false);
-    this.map.setMaxZoom(14);
     this.map.touchZoomRotate.disableRotation();
     this.map.keyboard.disableRotation();
   }
@@ -210,13 +206,6 @@ export class MapEngine {
   public toggleLayerVisibility(layerId: string, visible: boolean): void {
     if (this.map.getLayer(layerId)) {
       this.map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
-    }
-  }
-
-  public setMaxZoom(maxZoom: number): void {
-    this.map.setMaxZoom(maxZoom);
-    if (this.map.getZoom() > maxZoom) {
-      this.map.setZoom(maxZoom);
     }
   }
 
