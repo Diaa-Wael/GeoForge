@@ -1,11 +1,11 @@
 // vite.config.ts
 import { defineConfig } from 'vite';
-import path from 'path';
+import path from 'node:path';
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   server: {
@@ -16,7 +16,8 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     target: 'es2022',
-    chunkSizeWarningLimit: 1000,
+    // MapLibre's browser runtime is intentionally shipped as one vendor chunk.
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -25,6 +26,9 @@ export default defineConfig({
           }
           if (id.includes('node_modules/three')) {
             return 'three-vendor';
+          }
+          if (id.includes('node_modules/@turf')) {
+            return 'turf-vendor';
           }
         },
       },
