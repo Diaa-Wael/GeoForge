@@ -24,6 +24,7 @@ export class MapEngine {
       center: center,
       zoom: zoom,
       renderWorldCopies: false,
+      preserveDrawingBuffer: true,
       refreshExpiredTiles: false,
       // Keep more nearby tiles on desktop, but avoid excessive RAM use on
       // phones and tablets while still retaining parent/adjacent zoom tiles.
@@ -180,6 +181,19 @@ export class MapEngine {
   public toggleLayerVisibility(layerId: string, visible: boolean): void {
     if (this.map.getLayer(layerId)) {
       this.map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+    }
+  }
+
+  public setImageryUpscaling(enabled: boolean): void {
+    const layers = this.map.getStyle().layers ?? [];
+
+    for (const layer of layers) {
+      if (layer.type !== 'raster') continue;
+
+      this.map.setPaintProperty(layer.id, 'raster-resampling', 'linear');
+      this.map.setPaintProperty(layer.id, 'raster-contrast', enabled ? 0.12 : 0);
+      this.map.setPaintProperty(layer.id, 'raster-saturation', enabled ? 0.1 : 0);
+      this.map.setPaintProperty(layer.id, 'raster-brightness-max', enabled ? 1.04 : 1);
     }
   }
 

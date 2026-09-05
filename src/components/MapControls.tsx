@@ -69,6 +69,8 @@ interface MapControlsProps {
   onCoordinateFormatChange: (format: CoordinateFormat) => void;
   activeBasemapId: string;
   onBasemapChange: (option: BasemapOption) => void;
+  isImageryUpscaled: boolean;
+  onImageryUpscalingChange: () => void;
   getMap: () => MapLibreMap | null;
   initialView: { center: [number, number]; zoom: number };
 }
@@ -80,6 +82,8 @@ export const MapControls: React.FC<MapControlsProps> = ({
   onCoordinateFormatChange,
   activeBasemapId,
   onBasemapChange,
+  isImageryUpscaled,
+  onImageryUpscalingChange,
   getMap,
   initialView,
 }) => {
@@ -97,6 +101,7 @@ export const MapControls: React.FC<MapControlsProps> = ({
   const [highlightedResult, setHighlightedResult] = useState(-1);
   const searchRequestRef = React.useRef<AbortController | null>(null);
   const mapUiThemeStyle = getGisUiThemeStyle(activeBasemapId);
+  const isImageryBasemap = activeBasemapId === 'satellite' || activeBasemapId === 'hybrid';
 
   useEffect(() => {
     const position = cursorPositionRef.current;
@@ -376,6 +381,20 @@ export const MapControls: React.FC<MapControlsProps> = ({
           <div className="mb-1 text-[10px] text-[var(--gis-text-faint)] uppercase tracking-[0.12em]">
             {BASEMAP_OPTIONS.find((option) => option.id === activeBasemapId)?.label ?? 'Basemap'}
           </div>
+        )}
+
+        {isImageryBasemap && (
+          <button
+            type="button"
+            onClick={onImageryUpscalingChange}
+            className={`${labelBtn(isImageryUpscaled)} mb-1 justify-between text-left`}
+            style={{ width: '100%' }}
+            aria-pressed={isImageryUpscaled}
+            title="Enhance satellite imagery using high-quality raster resampling"
+          >
+            <span>Enhance Imagery</span>
+            <span className="text-[10px] opacity-75">{isImageryUpscaled ? 'On' : 'Off'}</span>
+          </button>
         )}
 
         <div className="gis-basemap-details">

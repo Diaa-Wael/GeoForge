@@ -55,6 +55,7 @@ export const UnifiedMapContainer: React.FC = () => {
 
   const [bearing, setBearing] = useState(0);
   const [activeBasemapId, setActiveBasemapId] = useState(DEFAULT_BASEMAP_ID);
+  const [isImageryUpscaled, setIsImageryUpscaled] = useState(false);
 
   const [bufferActive, setBufferActive] = useState(false);
   const [bufferRadius, setBufferRadius] = useState(DEFAULT_BUFFER_RADIUS);
@@ -281,6 +282,7 @@ export const UnifiedMapContainer: React.FC = () => {
 
     engine.onReady(() => {
       engine.initVectorLayers();
+      engine.setImageryUpscaling(isImageryUpscaled);
       if (residentsRef.current) addResidentsLayer(engine, residentsRef.current);
     });
 
@@ -313,6 +315,7 @@ export const UnifiedMapContainer: React.FC = () => {
     // last buffer once the new style has finished loading.
     map.once('style.load', () => {
       engine.initVectorLayers();
+      engine.setImageryUpscaling(isImageryUpscaled);
       if (residentsRef.current) addResidentsLayer(engine, residentsRef.current);
 
       if (bufferResult) {
@@ -324,6 +327,12 @@ export const UnifiedMapContainer: React.FC = () => {
         engine.updateBufferLayer(recomputed.geometry);
       }
     });
+  };
+
+  const handleImageryUpscalingChange = () => {
+    const enabled = !isImageryUpscaled;
+    setIsImageryUpscaled(enabled);
+    mapEngineRef.current?.setImageryUpscaling(enabled);
   };
 
   const handleToggleBufferActive = useCallback(() => {
@@ -396,6 +405,8 @@ export const UnifiedMapContainer: React.FC = () => {
         }}
         activeBasemapId={activeBasemapId}
         onBasemapChange={handleBasemapChange}
+        isImageryUpscaled={isImageryUpscaled}
+        onImageryUpscalingChange={handleImageryUpscalingChange}
         getMap={() => mapEngineRef.current?.getMapInstance() ?? null}
         initialView={initialViewRef.current}
       />
